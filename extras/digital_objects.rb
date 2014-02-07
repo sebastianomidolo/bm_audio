@@ -127,6 +127,36 @@ module DigitalObjects
     filecount
   end
 
+  def make_audioclips(dirname)
+    # puts "make_audioclips in #{dirname}"
+    fm=FileMagic.mime
+    mp=digital_objects_mount_point
+    filecount=0
+    Dir[(File.join(dirname,'*'))].each do |entry|
+      if File.directory?(entry)
+        filecount += make_audioclips(entry)
+      else
+        begin
+          fstat = File.stat(entry)
+          mtype = fm.file(entry)
+        rescue
+          puts "errore: #{$!}"
+          next
+        end
+        if (colloc=bm_get_collocazione(entry)).nil?
+          # puts "no collocazione => #{entry}"
+          next
+        end
+        case mtype.split(';').first
+        when 'audio/mpeg'
+          DObject.new({mime_type: mtype, filename: entry.sub(mp,'')}).digital_object_create_audioclip
+          filecount += 1
+        end
+      end
+    end
+    filecount
+  end
+
   def digital_object_read_metadata
     fname = File.join(digital_objects_mount_point,filename)
     fstat = File.stat(fname)
@@ -136,29 +166,29 @@ module DigitalObjects
     self.bfilesize = File.size(fname)
   end
 
-  def audioclip_basename(ext='mp3')
-    "audioclip_#{self.id}.#{ext}"
+  def audioclip_basename
+    self.filename
   end
   def audioclip_basedir
     config = Rails.configuration.database_configuration
-    config[Rails.env]["audioclips_basedir"]
+    config[Rails.env]['digital_objects_audioclips']
   end
-  def audioclip_filename(ext='mp3')
-    File.join(audioclip_basedir,audioclip_basename(ext))
+  def audioclip_filename
+    File.join(audioclip_basedir,audioclip_basename)
   end
 
-  def digital_object_create_audioclip(seconds=30,ext='mp3')
+  def digital_object_create_audioclip(seconds=30)
     return nil if self.mime_type!='audio/mpeg; charset=binary'
-    fn=File.join(digital_objects_mount_point,self.filename)
-    target=audioclip_filename(ext)
+    fn=self.filename_with_path
+    target=audioclip_filename
     return target if File.exists?(target) and File.size(target)>0
+    FileUtils.mkpath(File.dirname(target))
     cmd=%Q{/usr/bin/sox "#{fn}" "#{target}" trim 0 #{seconds} fade h 0 0:0:#{seconds} 4}
     # puts cmd
     Kernel.system(cmd)
     mp3=Mp3Info.open(target)
-    mp3.tag2.TCOP="Biblioteche civiche torinesi - Servizio libro parlato"
-    # mp3.tag2.WOAS="http://clavisbct.comperio.it/"
-    mp3.tag2.TCON='Audiobook'
+    mp3.tag2.TCOP="Biblioteche civiche torinesi - Sistema audio Biblioteca Andrea Della Corte"
+    mp3.tag2.WOAS="http://bct.comperio.it/"
     mp3.tag2.COMM="Preascolto traccia audio"
     mp3.close
     target
