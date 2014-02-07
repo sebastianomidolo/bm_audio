@@ -15,16 +15,20 @@ task :dir_scan => :environment do
   fdout.write(%Q{-- dir_scan started at #{Time.now}\n})
   numfiles=0
   dirs=[
-        'xCLA.F. - Classic Voice Allegati',
-        'xbm-3/04.F.237 - Maurizio Pollini Edition - 12 CD - DG',
-        'bm-1',
-        'bm-2',
+        'bm-1/CD Biblioteca Musicale',
+        'bm-1/TRIBERTI_CD/000_FINITI',
+        'bm-1/VENEGONI_CD/000_FINITI_CATALOGATI',
+        'bm-1/VENEGONI_CD/001_FLAC+SCANS',
+        'bm-1/VENEGONI_CD/002_SCANS_fare',
+        'bm-1/VINILI DIGITALIZZATI/www/db_aux',
         'bm-3',
        ]
 
-  fdout.write(%Q{BEGIN;
+  fdout.write(%Q{BEGIN;DROP TABLE public.collocazioni_musicale;COMMIT;
+BEGIN;
 ALTER TABLE public.attachments DROP CONSTRAINT "d_object_id_fkey";
 DELETE FROM public.d_objects WHERE filename LIKE 'bm::%';
+DELETE FROM public.attachments WHERE attachment_category_id = 'E';
 SELECT setval('public.d_objects_id_seq', (select max(id) FROM public.d_objects)+1);
 COPY public.d_objects (filename, bfilesize, f_ctime, f_mtime, f_atime, mime_type, tags) FROM stdin;\n})
   dirs.each do |folder|
@@ -33,7 +37,19 @@ COPY public.d_objects (filename, bfilesize, f_ctime, f_mtime, f_atime, mime_type
     numfiles+=digital_objects_dirscan(File.join(digital_objects_mount_point, '', folder), fdout)
   end
   fdout.write("\\.\n")
-  fdout.write(%Q{ALTER TABLE public.attachments ADD CONSTRAINT "d_object_id_fkey" FOREIGN KEY(d_object_id)
+  fdout.write(%Q{CREATE TABLE public.collocazioni_musicale AS
+  SELECT id AS d_object_id,
+     unnest(xpath('//@colloc',tags))::text AS collocation,
+     unnest(xpath('//@folder',tags))::text AS folder,
+     unnest(xpath('//@position',tags))::text::integer AS "position"
+   FROM d_objects WHERE tags IS document;
+CREATE INDEX collocazioni_musicale_idx ON public.collocazioni_musicale(collocation);
+INSERT INTO public.attachments
+  (d_object_id,attachable_id,attachable_type,attachment_category_id,"position",folder)
+  (SELECT DISTINCT cbm.d_object_id,ci.manifestation_id, 'ClavisManifestation','E',cbm.position,cbm.folder
+    FROM collocazioni_musicale cbm JOIN clavis.item ci USING(collocation)
+     WHERE ci.owner_library_id=3 AND ci.manifestation_id!=0 AND cbm.position IN (0,1));
+ALTER TABLE public.attachments ADD CONSTRAINT "d_object_id_fkey" FOREIGN KEY(d_object_id)
    REFERENCES public.d_objects ON UPDATE CASCADE ON DELETE CASCADE;\nCOMMIT;\n})
   fdout.write(%Q{-- dir_scan ended at #{Time.now}\n})
   fdout.close
