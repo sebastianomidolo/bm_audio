@@ -53,6 +53,43 @@ class FlacFile
     @cue_filedata=data.gsub("\r",'').gsub('  INDEX 0','  INDEX0').gsub("\t",' ')
   end
 
+  def make_mp3_audioclips(seconds=30)
+    sox_info=self.sox_split_info
+    return nil if sox_info.nil?
+
+    config = Rails.configuration.database_configuration
+    dirname=File.dirname(@flac_filename).sub(digital_objects_mount_point,'')
+    outdir=File.join(config[Rails.env]['digital_objects_audioclips'],dirname)
+    FileUtils.mkpath(outdir)
+    tracks=self.cue_tracklist
+    cnt=0
+    sox_info.each do |si|
+      puts si.inspect
+      tags=tracks[cnt]
+      cnt+=1
+      tracknum,start,len=si
+      begin
+        target=File.join(outdir, format("%03d%s", tracknum, '.mp3'))
+        puts target
+        next if File.exists?(target) and File.size(target)>0
+        cmd=%Q{/usr/bin/sox "#{@flac_filename}" "#{target}" trim #{start} #{seconds} fade h 0 0:0:#{seconds} 4}
+        puts cmd
+        Kernel.system(cmd)
+        mp3=Mp3Info.open(target)
+        mp3.tag
+        mp3.tag.title=tags['title']
+        mp3.tag.artist=tags['artist']
+        mp3.tag.tracknum=cnt
+        mp3.tag2.TCOP="Biblioteche civiche torinesi - Sistema audio Biblioteca Andrea Della Corte"
+        mp3.tag2.WOAS="http://bct.comperio.it/"
+        mp3.tag2.COMM="Preascolto traccia audio"
+        mp3.close
+      rescue
+        puts "Errore FlacFile#make_mp3_audioclips: #{$!}"
+      end
+    end
+  end
+
   def cue_head_block(tag=nil)
     return nil if self.cue_filedata.nil?
     data=self.cue_filedata.split("\n  TRACK")
