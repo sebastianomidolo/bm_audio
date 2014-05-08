@@ -14,9 +14,13 @@ task :make_audioclips => :environment do
         'bm-1/VINILI DIGITALIZZATI/www/db_aux',
         'bm-3',
        ]
+  xdirs=[
+        "bm-1/TRIBERTI_CD/000_FINITI/12.F.1010 - Bruce Cockburn - You've never seen everything",
+       ]
+
 
   dirs.each do |folder|
-    puts "folder: #{folder}"
+    # puts "folder: #{folder}"
     numfiles += make_audioclips(File.join(digital_objects_mount_point, '', folder))
     # puts "visti finora #{numfiles} files"
   end
