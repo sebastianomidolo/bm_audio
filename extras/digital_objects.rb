@@ -59,7 +59,7 @@ module DigitalObjects
         end
         if (colloc=bm_get_collocazione(entry)).nil?
           # puts "no collocazione => #{entry}"
-          next
+          # next
         end
 
         # mime-type: audio/mpeg
@@ -110,7 +110,7 @@ module DigitalObjects
           end
           mp3.close
         else
-          # puts "non trattato: #{mtype}"
+          puts "non trattato: #{mtype}"
           next
         end
         next if tags.nil?
@@ -145,13 +145,20 @@ module DigitalObjects
         end
         if (colloc=bm_get_collocazione(entry)).nil?
           # puts "no collocazione => #{entry}"
-          next
+          # next
         end
         case mtype.split(';').first
         when 'audio/mpeg'
+          puts File.basename(entry)
           DObject.new({mime_type: mtype, filename: entry.sub(mp,'')}).digital_object_create_audioclip
           filecount += 1
+        when 'audio/x-flac'
+          puts "flac: #{entry}"
+          ff=FlacFile.new(entry)
+          ff.make_mp3_audioclips
+          next
         end
+
       end
     end
     filecount
@@ -180,11 +187,14 @@ module DigitalObjects
   def digital_object_create_audioclip(seconds=30)
     return nil if self.mime_type!='audio/mpeg; charset=binary'
     fn=self.filename_with_path
+    if !(fn =~ /\`/).nil?
+      puts "Errore nome file: #{fn}"
+      return nil
+    end
     target=audioclip_filename
     return target if File.exists?(target) and File.size(target)>0
     FileUtils.mkpath(File.dirname(target))
     cmd=%Q{/usr/bin/sox "#{fn}" "#{target}" trim 0 #{seconds} fade h 0 0:0:#{seconds} 4}
-    # puts cmd
     Kernel.system(cmd)
     mp3=Mp3Info.open(target)
     mp3.tag2.TCOP="Biblioteche civiche torinesi - Sistema audio Biblioteca Andrea Della Corte"
