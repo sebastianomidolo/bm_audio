@@ -183,7 +183,7 @@ class ApeFile
     if self.valid_cue_file?
       self.cue_tracklist.each do |t|
         e=REXML::Element.new('title')
-        e.text=t['title'].gsub!('\\', '')
+        e.text=t['title'].gsub('\\', '')
         e.attributes['position']=t['tracknumber']
         e.attributes['index00']=t['index00']
         e.attributes['index01']=t['index01']

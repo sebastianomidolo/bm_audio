@@ -28,3 +28,5 @@ gem 'jquery-rails'
 
 gem 'ruby-filemagic'
 gem 'ruby-mp3info'
+
+gem 'libxml-ruby'
