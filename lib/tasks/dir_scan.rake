@@ -24,7 +24,7 @@ task :dir_scan => :environment do
         'bm-3',
        ]
   xdirs=[
-        'bm-1/VINILI DIGITALIZZATI/www/db_aux',
+        'bm-1/TRIBERTI_CD/000_FINITI/12.F.1446 - Pitura Freska - Duri i banchi'
        ]
 
   fdout.write(%Q{BEGIN;DROP TABLE public.collocazioni_musicale;COMMIT;

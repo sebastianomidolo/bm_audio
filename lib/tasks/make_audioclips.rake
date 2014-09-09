@@ -14,8 +14,8 @@ task :make_audioclips => :environment do
         'bm-1/VINILI DIGITALIZZATI/www/db_aux',
         'bm-3',
        ]
-  xdirs=[
-        "bm-1/TRIBERTI_CD/000_FINITI/12.F.1010 - Bruce Cockburn - You've never seen everything",
+  dirs=[
+        "bm-3",
        ]
 
 
