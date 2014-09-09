@@ -32,7 +32,14 @@ class FlacFile
 
   def valid_cue_file?
     return nil if self.cue_filedata.nil?
-    ext=File.extname(cue_head_block('FILE').downcase)
+    begin
+      ext=File.extname(cue_head_block('FILE').downcase)
+    rescue
+      fd=File.open("/tmp/errori_formato_cue.txt", 'a+')
+      fd.write(%Q{#{self.cue_filename}\n})
+      fd.close
+      return false
+    end
     ext=='.flac' ? true : false
   end
 
@@ -93,6 +100,7 @@ class FlacFile
   def cue_head_block(tag=nil)
     return nil if self.cue_filedata.nil?
     data=self.cue_filedata.split("\n  TRACK")
+    # data=self.cue_filedata.split("\nTRACK") if data.size < 2
     return nil if data.size < 2
     data=data.first
     if tag.blank?
@@ -239,7 +247,8 @@ class FlacFile
     if self.valid_cue_file?
       self.cue_tracklist.each do |t|
         e=REXML::Element.new('title')
-        e.text=t['title'].gsub('\\', '')
+        title=t['title'].blank? ? '[titolo_mancante]' : t['title']
+        e.text=title.gsub('\\', '')
         e.attributes['position']=t['tracknumber']
         e.attributes['index00']=t['index00']
         e.attributes['index01']=t['index01']

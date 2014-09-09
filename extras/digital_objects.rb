@@ -32,13 +32,12 @@ module DigitalObjects
   end
 
   def digital_objects_dirscan(dirname, fdout, folder='', prec_folder='')
-    # puts "analizzo dir #{dirname}"
+    puts "analizzo dir #{dirname}"
     fm=FileMagic.mime
 
     mp=digital_objects_mount_point
     filecount=0
     Dir[(File.join(dirname,'*'))].each do |entry|
-
       dirname=File.dirname(entry)
       if prec_folder!=dirname
         folder=dirname.sub(prec_folder,'').sub(/^\//,'')
@@ -95,7 +94,12 @@ module DigitalObjects
           # puts entry
           # puts "precfolder #{prec_folder}"
           # puts "   dirname #{dirname}"
-          tags=ff.tracklist_xml(colloc,folder)
+          begin
+            tags=ff.tracklist_xml(colloc,folder)
+          rescue
+            puts "Errore da tracklist_xml: #{$!}"
+            puts "File che ha provocato l'errore: #{entry}"
+          end
         when 'audio/mpeg'
           mp3=Mp3Info.open(entry)
           if !mp3.tag.title.nil?
@@ -110,7 +114,7 @@ module DigitalObjects
           end
           mp3.close
         else
-          puts "non trattato: #{mtype}"
+          # puts "non trattato: #{mtype}"
           next
         end
         next if tags.nil?
