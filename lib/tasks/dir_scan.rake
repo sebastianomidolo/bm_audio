@@ -16,15 +16,15 @@ task :dir_scan => :environment do
   numfiles=0
   dirs=[
         'bm-1/CD Biblioteca Musicale',
-        'bm-1/TRIBERTI_CD/000_FINITI',
-        'bm-1/VENEGONI_CD/000_FINITI_CATALOGATI',
-        'bm-1/VENEGONI_CD/001_FLAC+SCANS',
-        'bm-1/VENEGONI_CD/002_SCANS_fare',
-        'NObm-1/VINILI DIGITALIZZATI/www/db_aux',
+        'bm-1/TRIBERTI_CD',
+        'bm-1/VENEGONI_CD',
         'bm-3',
+        'ITER',
        ]
   xdirs=[
-        'bm-1/TRIBERTI_CD/000_FINITI/12.F.1446 - Pitura Freska - Duri i banchi'
+        'bm-1/TRIBERTI_CD/000_FINITI/12.F.1446 - Pitura Freska - Duri i banchi',
+        'NObm-1/VINILI DIGITALIZZATI/www/db_aux',
+        'ITER',
        ]
 
   fdout.write(%Q{BEGIN;DROP TABLE public.collocazioni_musicale;COMMIT;
